@@ -1,0 +1,419 @@
+--------------------------------------------------------------------------------
+      name:  <unnamed>
+       log:  C:\Users\muchhal1\OneDrive - Michigan State University\EC422\Projec
+> t\Aria\Project_Aria\ProjectFigsLog.txt
+  log type:  text
+ opened on:  21 Apr 2024, 13:14:07
+
+. * Draw Figure 1: (1a and 1b)
+. do FIGURE1.do
+
+. * FIGURE 1A
+. capture: ssc install coefplot   /* The "capture" suppresses breaks due to erro
+> rs (in this case, if coefplot already installed) */
+
+. capture: ssc install estout
+
+. set matsize 1000
+
+. import delimited "Data/Affinity - National - Daily.csv"
+(142 vars, 1,347 obs)
+
+. drop if year <= 2019
+(366 observations deleted)
+
+. drop if year >=2022
+(250 observations deleted)
+
+. gen date = mdy(month, day, year)
+
+. format date %dM_d,_CY
+
+. gen BIQ = spend_s_all_q1*3.5+3.5
+
+. gen TIQ = spend_s_all_q4*8.3+8.3
+
+. twoway (line BIQ date, sort) (lfit BIQ date) (line TIQ date, sort) (lfit TIQ d
+> ate), ytitle(Credit and Debit Card Spending Per Day ($ Billions)) ylabel(, val
+> uelabel) xtitle(Date) title(Spending Changes by Income Quartile) legend(label(
+> 1 "Bottom Income Quartile") label(3 "Top Income Quartile"))
+
+. graph export Figures/fig_1A.png, as(png) replace
+(file Figures/fig_1A.png written in PNG format)
+
+. clear 
+
+. 
+. *FIGURE 1B
+. capture: ssc install coefplot   /* trying to get the subgroups underneath to s
+> how up or stack properly*/
+
+. capture: ssc install estout
+
+. set matsize 1000
+
+. import delimited "Data/Affinity Industry Composition - National - 2020.csv"
+(3 vars, 8 obs)
+
+. gen seqnum=_n
+
+. gen I = 9-seqnum
+
+. reshape long share_, i(I) j(type) string
+(note: j = decline_covidfirstwave jan2020)
+
+Data                               wide   ->   long
+-----------------------------------------------------------------------------
+Number of obs.                        8   ->      16
+Number of variables                   5   ->       5
+j variable (2 values)                     ->   type
+xij variables:
+share_decline_covidfirstwave share_jan2020->   share_
+-----------------------------------------------------------------------------
+
+. encode type, generate(Type)
+
+. bys Type (I) : replace share_ = sum(share_)
+(14 real changes made)
+
+. bys Type (I) : replace share_ = share_/share_[_N]*100
+(16 real changes made)
+
+. 
+. twoway bar share_ Type if I == 8, barwidth(.5) || ///
+>        bar share_ Type if I == 7, barwidth(.5) || ///
+>        bar share_ Type if I == 6, barwidth(.5) || ///
+>        bar share_ Type if I == 5, barwidth(.5) || ///
+>        bar share_ Type if I == 4, barwidth(.5) || ///
+>         bar share_ Type if I == 3, barwidth(.5) || ///
+>        bar share_ Type if I == 2, barwidth(.5) || ///
+>            bar share_ Type if I == 1, barwidth(.5)   ///
+>        legend(order(1 "Durable Goods"                    ///
+>                     2 "Non-Durable Goods"                        ///
+>                     3 "Remote Services"                      ///
+>                     4 "Other In-Person Services"                         ///
+>                     5 "Recreation"                              ///
+>                         6 "Health Care"                      ///
+>                     7 "Transportation"                         ///
+>                     8 "Hotels and Fuel"))                       ///
+>        ytitle(Percent)                               ///
+>            xtitle(Date) xlabel(1 "Share of Decline(Jan to Mar 25-Apr 14)" 2 "S
+> hare of Pre-COVID Spending", noticks ) title(Spending Changes by Sector)
+
+. graph export Figures/fig_1B.png, as(png) replace
+(file Figures/fig_1B.png written in PNG format)
+
+. clear 
+
+. 
+end of do-file
+
+. * Draw Figure 2
+. do FIGURE2.do
+
+. * FIGURE 2
+. capture: ssc install coefplot   /* The "capture" suppresses breaks due to erro
+> rs (in this case, if coefplot already installed) */
+
+. capture: ssc install estout
+
+. capture: ssc install egenmore
+
+. adopath
+  [1]  (BASE)      "C:\Program Files (x86)\Stata14\ado\base/"
+  [2]  (SITE)      "C:\Program Files (x86)\Stata14\ado\site/"
+  [3]              "."
+  [4]  (PERSONAL)  "c:\ado\personal/"
+  [5]  (PLUS)      "c:\ado\plus/"
+  [6]  (OLDPLACE)  "c:\ado/"
+
+. set matsize 1000
+
+. ssc install binscatter
+checking binscatter consistency and verifying not already installed...
+all files already exist and are up to date.
+
+. ssc install outreg2
+checking outreg2 consistency and verifying not already installed...
+all files already exist and are up to date.
+
+. import delimited "Data/Affinity - County - Daily.csv"
+(7 vars, 1,595,959 obs)
+
+. drop if spend_all == .
+(38,303 observations deleted)
+
+. drop if year >=2021
+(988,304 observations deleted)
+
+. drop if month <=2 | month >=5
+(471,081 observations deleted)
+
+. drop if month==3 & day <=25
+(40,275 observations deleted)
+
+. drop if month==4 & day >=14
+(27,387 observations deleted)
+
+. collapse (mean) spend_all, by(countyfips)
+
+. save "Data/Affinity - County FIG2.dta", replace
+file Data/Affinity - County FIG2.dta saved
+
+. clear
+
+. import delimited "Data/COVID - County - Daily 2020.csv"
+(28 vars, 1,129,752 obs)
+
+. drop if new_case_count == .
+(275,111 observations deleted)
+
+. drop if year >=2021
+(0 observations deleted)
+
+. drop if month >=5
+(754,607 observations deleted)
+
+. drop if month==4 & day <=14
+(34,342 observations deleted)
+
+. collapse (mean) case_rate, by(countyfips)
+
+. save "Data/COVID - County FIG2.dta", replace
+file Data/COVID - County FIG2.dta saved
+
+. merge 1:1 countyfips using "Data/Affinity - County FIG2.dta"
+
+    Result                           # of obs.
+    -----------------------------------------
+    not matched                         1,302
+        from master                     1,258  (_merge==1)
+        from using                         44  (_merge==2)
+
+    matched                             1,567  (_merge==3)
+    -----------------------------------------
+
+. drop _merge
+
+. save "Data/COVID+Affinity - County FIG2.dta", replace
+file Data/COVID+Affinity - County FIG2.dta saved
+
+. clear
+
+. import delimited "Data/Census IncomebyCounty.csv"
+(551 vars, 3,222 obs)
+
+. replace v1 = subinstr(v1, "0500000US", "", .)
+(3,220 real changes made)
+
+. destring v1, generate(countyfips) force
+v1 contains nonnumeric characters; countyfips generated as long
+(2 missing values generated)
+
+. destring v125, generate(median_income) force
+v125 contains nonnumeric characters; median_income generated as long
+(3 missing values generated)
+
+. collapse (mean) median_income, by(countyfips)
+
+. merge 1:1 countyfips using "Data/COVID+Affinity - County FIG2.dta"
+
+    Result                           # of obs.
+    -----------------------------------------
+    not matched                           352
+        from master                       352  (_merge==1)
+        from using                          0  (_merge==2)
+
+    matched                             2,869  (_merge==3)
+    -----------------------------------------
+
+. egen quartile_median_income=xtile(median_income), n(4)
+(2 missing values generated)
+
+. drop if quartile_median_income ==2 | quartile_median_income ==3
+(1,610 observations deleted)
+
+. binscatter spend_all case_rate, by(quartile_median_income) xscale(log) xlabel(
+> 25 50 100 200 400 800) line(lfit) reportreg legend(on position(2) ring(0) orde
+> r(1 "Low Income Counties" 2 "High Income Counties ")) ytitle("Change in Consum
+> er Spending (%) from January to April 2020", size(small))                     
+>           ///
+>            xtitle("County-level COVID-19 Cases Per 100,000 People (Log Scale)"
+> , size(small)) title("Association Between COVID-19 Incidence and Changes in Co
+> nsumer Spending", size(medsmall))
+--------------------------------------------------------------------------------
+-> quartile_median_income = 1
+
+      Source |       SS           df       MS      Number of obs   =       193
+-------------+----------------------------------   F(1, 191)       =      2.11
+       Model |  .022394355         1  .022394355   Prob > F        =    0.1477
+    Residual |  2.02416619       191  .010597729   R-squared       =    0.0109
+-------------+----------------------------------   Adj R-squared   =    0.0058
+       Total |  2.04656055       192   .01065917   Root MSE        =    .10295
+
+------------------------------------------------------------------------------
+   spend_all |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+   case_rate |  -.0001035   .0000712    -1.45   0.148    -.0002439    .0000369
+       _cons |  -.2265531   .0090971   -24.90   0.000    -.2444968   -.2086094
+------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+-> quartile_median_income = 4
+
+      Source |       SS           df       MS      Number of obs   =       577
+-------------+----------------------------------   F(1, 575)       =     11.55
+       Model |   .05428535         1   .05428535   Prob > F        =    0.0007
+    Residual |  2.70330533       575  .004701401   R-squared       =    0.0197
+-------------+----------------------------------   Adj R-squared   =    0.0180
+       Total |  2.75759068       576  .004787484   Root MSE        =    .06857
+
+------------------------------------------------------------------------------
+   spend_all |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+   case_rate |  -.0000744   .0000219    -3.40   0.001    -.0001174   -.0000314
+       _cons |  -.3028238   .0033681   -89.91   0.000     -.309439   -.2962086
+------------------------------------------------------------------------------
+
+. graph export Figures/fig_2.png, as(png) replace
+(file Figures/fig_2.png written in PNG format)
+
+. reg spend_all case_rate if quartile_median_income==4
+
+      Source |       SS           df       MS      Number of obs   =       577
+-------------+----------------------------------   F(1, 575)       =     11.55
+       Model |   .05428535         1   .05428535   Prob > F        =    0.0007
+    Residual |  2.70330533       575  .004701401   R-squared       =    0.0197
+-------------+----------------------------------   Adj R-squared   =    0.0180
+       Total |  2.75759068       576  .004787484   Root MSE        =    .06857
+
+------------------------------------------------------------------------------
+   spend_all |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+   case_rate |  -.0000744   .0000219    -3.40   0.001    -.0001174   -.0000314
+       _cons |  -.3028238   .0033681   -89.91   0.000     -.309439   -.2962086
+------------------------------------------------------------------------------
+
+. outreg2 using Covid19HighIncomeSpending, tex replace ctitle(Effect of Covid-19
+>  Cases on Consumer Spending Changes High Income)
+Covid19HighIncomeSpending.tex
+dir : seeout
+
+. outreg2 using Covid19HighIncomeSpending, word replace ctitle(Effect of Covid-1
+> 9 Cases on Consumer Spending Changes High Income)
+Covid19HighIncomeSpending.rtf
+dir : seeout
+
+. reg spend_all case_rate if quartile_median_income==1
+
+      Source |       SS           df       MS      Number of obs   =       193
+-------------+----------------------------------   F(1, 191)       =      2.11
+       Model |  .022394355         1  .022394355   Prob > F        =    0.1477
+    Residual |  2.02416619       191  .010597729   R-squared       =    0.0109
+-------------+----------------------------------   Adj R-squared   =    0.0058
+       Total |  2.04656055       192   .01065917   Root MSE        =    .10295
+
+------------------------------------------------------------------------------
+   spend_all |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+   case_rate |  -.0001035   .0000712    -1.45   0.148    -.0002439    .0000369
+       _cons |  -.2265531   .0090971   -24.90   0.000    -.2444968   -.2086094
+------------------------------------------------------------------------------
+
+. outreg2 using Covid19LowIncomeSpending, tex replace ctitle(Effect of Covid-19 
+> Cases on Consumer Spending Changes Low Incomee)
+Covid19LowIncomeSpending.tex
+dir : seeout
+
+. outreg2 using Covid19LowIncomeSpending, word replace ctitle(Effect of Covid-19
+>  Cases on Consumer Spending Changes Low Income)
+Covid19LowIncomeSpending.rtf
+dir : seeout
+
+. clear
+
+. 
+end of do-file
+
+. * Draw Figure 3
+. do FIGURE3.do
+
+. * FIGURE 3
+. capture: ssc install coefplot
+
+. capture: ssc install estout
+
+. capture: ssc install egenmore
+
+. adopath
+  [1]  (BASE)      "C:\Program Files (x86)\Stata14\ado\base/"
+  [2]  (SITE)      "C:\Program Files (x86)\Stata14\ado\site/"
+  [3]              "."
+  [4]  (PERSONAL)  "c:\ado\personal/"
+  [5]  (PLUS)      "c:\ado\plus/"
+  [6]  (OLDPLACE)  "c:\ado/"
+
+. set matsize 1000
+
+. ssc install binscatter
+checking binscatter consistency and verifying not already installed...
+all files already exist and are up to date.
+
+. import delimited "Data/Womply - ZCTA - 2020.csv"
+(3 vars, 10,329 obs)
+
+. save "Data/Womply - ZCTA - 2020.dta", replace
+file Data/Womply - ZCTA - 2020.dta saved
+
+. clear
+
+. import delimited "Data/Census RentbyZip.csv"
+(17 vars, 33,122 obs)
+
+. replace v2 = subinstr(v2, "ZCTA5 ", "", .)
+(33,120 real changes made)
+
+. destring v2, generate(zcta) force
+v2 contains nonnumeric characters; zcta generated as long
+(2 missing values generated)
+
+. destring v9, generate(rent_2bed) force
+v9 contains nonnumeric characters; rent_2bed generated as int
+(10305 missing values generated)
+
+. collapse (mean) rent_2bed, by(zcta)
+
+. merge 1:1 zcta using "Data/Womply - ZCTA - 2020.dta"
+
+    Result                           # of obs.
+    -----------------------------------------
+    not matched                        22,792
+        from master                    22,792  (_merge==1)
+        from using                          0  (_merge==2)
+
+    matched                            10,329  (_merge==3)
+    -----------------------------------------
+
+. binscatter revenue_all_apr2020 rent_2bed, line(lfit)                     ///
+> ytitle("Change in Small Business Revenue (%)from January to April 2020", size(
+> small))                               ///
+>            xtitle("Median Two Bedroom Monthly Rent in 2014-2018 ($)", size(sma
+> ll))                     ///
+>            title("Changes in Small Business Revenues vs. Median Two Bedroom Re
+> nt, by ZIP", size(medsmall))
+
+. graph export Figures/fig_3.png, as(png) replace
+(file Figures/fig_3.png written in PNG format)
+
+. clear
+
+. 
+end of do-file
+
+. *clear
+. log close
+      name:  <unnamed>
+       log:  C:\Users\muchhal1\OneDrive - Michigan State University\EC422\Projec
+> t\Aria\Project_Aria\ProjectFigsLog.txt
+  log type:  text
+ closed on:  21 Apr 2024, 13:15:31
+--------------------------------------------------------------------------------
