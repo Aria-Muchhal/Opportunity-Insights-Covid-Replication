@@ -1,0 +1,12 @@
+	(1)
+VARIABLES	Effect of Covid-19 Cases on Consumer Spending Changes High Income
+	
+case_rate	-7.44e-05***
+	(2.19e-05)
+Constant	-0.303***
+	(0.00337)
+	
+Observations	577
+R-squared	0.020
+Standard errors in parentheses	
+*** p<0.01, ** p<0.05, * p<0.1	
